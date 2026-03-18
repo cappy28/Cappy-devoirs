@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyAI — Révise avec l'IA</title>
+<script src="https://js.puter.com/v2/"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700&family=Lora:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a1410;--ink2:#3d2f22;--parch:#f5f0e8;--parch2:#e8e0d0;--parch3:#d4c9b0;
+  --gold:#c8941a;--goldl:#e8b84b;--goldp:#f7e9c0;--cream:#faf8f3;
+  --sh:rgba(26,20,16,.11);--sh2:rgba(26,20,16,.26);
+  --ok:#4caf78;--bad:#e05454;--aprx:#e8a84b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Lora',Georgia,serif;background:var(--parch);color:var(--ink);min-height:100vh}
+
+header{background:var(--ink);padding:1.1rem 1.8rem;display:flex;align-items:center;gap:.85rem;border-bottom:3px solid var(--gold);position:sticky;top:0;z-index:100}
+.logo{width:40px;height:40px;background:var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink);flex-shrink:0}
+header h1{font-family:'Playfair Display',serif;color:var(--parch);font-size:1.4rem;font-weight:600}
+.sub{color:var(--goldl);font-size:.74rem;font-style:italic;margin-top:1px}
+.free-badge{margin-left:auto;background:#22c55e;color:#fff;padding:3px 12px;border-radius:20px;font-size:.68rem;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+
+main{max-width:860px;margin:0 auto;padding:2rem 1.3rem}
+.card{background:var(--cream);border:1px solid var(--parch3);border-radius:8px;padding:1.9rem;box-shadow:0 2px 10px var(--sh);margin-bottom:1.3rem}
+.stitle{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);margin-bottom:1.1rem;display:flex;align-items:center;gap:.55rem}
+.snum{width:26px;height:26px;background:var(--gold);color:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+
+/* DROP ZONE */
+.drop{border:2px dashed var(--parch3);border-radius:6px;padding:1.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--parch);margin-bottom:.9rem;position:relative}
+.drop:hover,.drop.over{border-color:var(--gold);background:var(--goldp)}
+.drop.over{transform:scale(1.01)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:1.8rem;margin-bottom:.4rem;opacity:.4;line-height:1}
+.drop-title{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--ink);margin-bottom:.28rem}
+.drop-sub{font-size:.74rem;color:#9a8c78;font-style:italic}
+.fmt-pills{display:flex;justify-content:center;gap:.4rem;margin-top:.65rem;flex-wrap:wrap}
+.pill{background:var(--cream);border:1px solid var(--parch3);border-radius:20px;padding:2px 10px;font-size:.67rem;font-family:'JetBrains Mono',monospace;color:#9a8c78}
+.pill.img{background:var(--goldp);border-color:var(--goldl);color:var(--gold)}
+
+/* THUMBS */
+.thumbs{display:none;gap:.75rem;flex-wrap:wrap;margin-bottom:.9rem}
+.thumbs.show{display:flex}
+.thumb{position:relative;width:86px;height:86px;border-radius:5px;overflow:hidden;border:1.5px solid var(--parch3);flex-shrink:0}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-ov{position:absolute;inset:0;background:rgba(26,20,16,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.thumb:hover .thumb-ov{opacity:1}
+.rm-img{background:none;border:none;cursor:pointer;color:#fff;font-size:1.1rem;line-height:1}
+.istatus{position:absolute;bottom:0;left:0;right:0;font-size:.59rem;font-family:'JetBrains Mono',monospace;text-align:center;padding:2px 3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.istatus.loading{background:rgba(200,148,26,.9);color:var(--ink)}
+.istatus.done{background:rgba(76,175,120,.9);color:#fff}
+.istatus.error{background:rgba(224,84,84,.9);color:#fff}
+.add-btn{width:86px;height:86px;border-radius:5px;border:2px dashed var(--parch3);background:var(--parch);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .15s;flex-shrink:0;font-size:.68rem;color:#9a8c78;font-family:'Playfair Display',serif;position:relative}
+.add-btn:hover{border-color:var(--gold);background:var(--goldp);color:var(--gold)}
+.add-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* BANNERS */
+.parsing{display:none;align-items:center;gap:.7rem;padding:.72rem 1rem;color:#9a8c78;font-style:italic;font-size:.83rem;background:var(--parch);border-radius:6px;margin-bottom:.9rem}
+.parsing.show{display:flex}
+.fok{display:none;align-items:center;gap:.7rem;background:#e8f5ea;border:1px solid var(--ok);border-radius:6px;padding:.68rem 1rem;margin-bottom:.9rem;font-size:.86rem;color:#1a4a2e}
+.fok.show{display:flex}
+.fok-name{flex:1;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ferr{display:none;padding:.68rem 1rem;background:#fbeaea;border-left:3px solid var(--bad);border-radius:0 4px 4px 0;font-size:.83rem;color:#5a1a1a;margin-bottom:.9rem}
+.ferr.show{display:block}
+.divider{display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:#9a8c78;font-style:italic;margin-bottom:.78rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--parch3)}
+
+/* TEXTAREA */
+.ta{width:100%;min-height:165px;padding:.95rem 1.1rem;font-family:'Lora',serif;font-size:.93rem;line-height:1.72;color:var(--ink);background:var(--parch);border:1.5px solid var(--parch3);border-radius:4px;resize:vertical;outline:none;transition:border-color .2s}
+.ta:focus{border-color:var(--gold);background:#fdfbf7}
+.ta::placeholder{color:#9a8c78;font-style:italic}
+.meta{margin-top:.5rem;font-size:.75rem;color:#9a8c78;font-style:italic;display:flex;justify-content:space-between}
+
+/* BUTTON */
+.gen-btn{margin-top:1.1rem;width:100%;padding:.9rem;background:var(--ink);color:var(--goldl);border:none;border-radius:5px;font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all .2s}
+.gen-btn:hover{background:var(--ink2);transform:translateY(-1px)}
+.gen-btn:active{transform:none}
+.gen-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.loader{display:none;align-items:center;justify-content:center;gap:.8rem;padding:1.4rem;color:#9a8c78;font-style:italic;font-size:.88rem}
+.loader.show{display:flex}
+.dots{display:flex;gap:5px}
+.dots span{width:7px;height:7px;background:var(--gold);border-radius:50%;animation:pulse 1.2s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{transform:scale(.7);opacity:.5}40%{transform:scale(1);opacity:1}}
+
+/* TABS */
+.tabs-sec{display:none}.tabs-sec.show{display:block}
+.tabs-hd{display:flex;border-bottom:2px solid var(--parch3);overflow-x:auto}
+.tab{padding:.72rem 1.3rem;background:none;border:none;font-family:'Playfair Display',serif;font-size:.9rem;color:#9a8c78;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;display:flex;align-items:center;gap:.38rem;white-space:nowrap;flex-shrink:0}
+.tab:hover{color:var(--ink)}.tab.active{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
+.tcnt{background:var(--goldp);color:var(--gold);border-radius:10px;padding:1px 7px;font-size:.68rem;font-family:'JetBrains Mono',monospace;font-weight:500}
+.panel{display:none;padding-top:1.3rem}.panel.active{display:block}
+
+/* FLASHCARDS */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(242px,1fr));gap:.9rem}
+.fc-wrap{perspective:1000px;height:168px;cursor:pointer}
+.fc-inner{width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);position:relative}
+.fc-wrap.flip .fc-inner{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:6px;padding:1.1rem;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--parch3)}
+.fc-front{background:var(--cream);box-shadow:0 2px 7px var(--sh)}
+.fc-back{background:var(--ink);transform:rotateY(180deg);box-shadow:0 2px 7px var(--sh2)}
+.fc-lbl{font-size:.64rem;font-family:'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
+.fc-front .fc-lbl{color:var(--gold)}.fc-back .fc-lbl{color:var(--goldl);opacity:.7}
+.fc-txt{font-size:.89rem;line-height:1.46;flex:1;display:flex;align-items:center;padding:.35rem 0}
+.fc-front .fc-txt{color:var(--ink);font-style:italic}.fc-back .fc-txt{color:var(--parch)}
+.fc-hint{font-size:.66rem;font-style:italic;align-self:flex-end;color:#9a8c78}
+
+/* QUIZ */
+.qprog{display:flex;align-items:center;gap:.85rem;margin-bottom:1.3rem}
+.pbar{flex:1;height:5px;background:var(--parch3);border-radius:3px;overflow:hidden}
+.pfill{height:100%;background:var(--gold);border-radius:3px;transition:width .4s}
+.plbl{font-size:.74rem;font-family:'JetBrains Mono',monospace;color:#9a8c78;white-space:nowrap}
+.sbadge{background:var(--goldp);color:var(--gold);border:1px solid var(--goldl);padding:2px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.74rem}
+.qcard{background:var(--parch);border:1.5px solid var(--parch3);border-radius:6px;padding:1.4rem}
+.qnum{font-size:.69rem;font-family:'JetBrains Mono',monospace;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.5rem}
+.qtxt{font-family:'Playfair Display',serif;font-size:1.06rem;line-height:1.5;color:var(--ink);margin-bottom:1.1rem}
+.opts{display:grid;gap:.44rem}
+.opt{padding:.65rem .92rem;background:var(--cream);border:1.5px solid var(--parch3);border-radius:4px;cursor:pointer;font-family:'Lora',serif;font-size:.89rem;color:var(--ink);text-align:left;transition:all .15s;display:flex;align-items:center;gap:.62rem}
+.opt:hover:not(:disabled){border-color:var(--gold);background:var(--goldp)}
+.opt:disabled{cursor:default}
+.opt.correct{background:#e8f5ea;border-color:var(--ok);color:#1a4a2e}
+.opt.wrong{background:#fbeaea;border-color:var(--bad);color:#5a1a1a}
+.olet{width:21px;height:21px;background:var(--parch3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-family:'JetBrains Mono',monospace;font-weight:500;flex-shrink:0}
+.opt.correct .olet{background:var(--ok);color:#fff}.opt.wrong .olet{background:var(--bad);color:#fff}
+.qfb{display:none;margin-top:.88rem;padding:.85rem 1rem;background:var(--parch);border-left:4px solid var(--gold);border-radius:0 4px 4px 0;font-size:.86rem;line-height:1.6;color:var(--ink2);font-style:italic}
+.qfb.show{display:block}
+.nxt{display:none;margin-top:.88rem;padding:.58rem 1.6rem;background:var(--ink);color:var(--goldl);border:none;border-radius:4px;font-family:'Playfair Display',serif;font-size:.87rem;cursor:pointer;transition:background .15s}
+.nxt:hover{background:var(--ink2)}.nxt.show{display:inline-block}
+.res{display:none;text-align:center;padding:2rem 1rem}.res.show{display:block}
+.res-score{font-family:'Playfair Display',serif;font-size:3.8rem;color:var(--gold);font-weight:700;line-height:1}
+.res-lbl{font-size:.94rem;color:var(--ink2);margin:.45rem 0 1.35rem;font-style:italic}
+.retry{padding:.6rem 1.7rem;background:none;color:var(--ink);border:1.5px solid var(--parch3);border-radius:4px;font-family:'Playfair Display',serif;font-size:.88rem;cursor:pointer;transition:all .15s}
+.retry:hover{border-color:var(--gold);color:var(--gold)}
+
+/* BLANKS */
+.blank-item{background:var(--parch);border:1px solid var(--parch3);border-radius:6px;padding:1.3rem;margin-bottom:.88rem;position:relative;transition:border-color .2s}
+.blank-item.chk{border-color:var(--gold)}
+.bsentence{font-family:'Lora',serif;font-size:.96rem;line-height:1.85;color:var(--ink);margin-bottom:.88rem}
+.brow{display:flex;gap:.52rem;align-items:center;flex-wrap:wrap}
+.binput{flex:1;min-width:145px;padding:.48rem .82rem;border:1.5px solid var(--parch3);border-radius:4px;font-family:'Lora',serif;font-size:.9rem;background:var(--cream);color:var(--ink);outline:none;transition:border-color .2s}
+.binput:focus{border-color:var(--gold)}
+.binput.ok{border-color:var(--ok);background:#e8f5ea}
+.binput.bad{border-color:var(--bad);background:#fbeaea}
+.binput.aprx{border-color:var(--aprx);background:#fef6e0}
+.chkbtn{padding:.48rem 1rem;background:var(--gold);color:var(--ink);border:none;border-radius:4px;font-family:'Lora',serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap}
+.chkbtn:hover{background:var(--goldl)}.chkbtn:disabled{opacity:.5;cursor:not-allowed}
+.bres{display:none;margin-top:.72rem;padding:.7rem .92rem;border-radius:4px;font-size:.83rem;line-height:1.6}
+.bres.show{display:block}
+.bres.ok{background:#e8f5ea;color:#1a4a2e;border-left:3px solid var(--ok)}
+.bres.bad{background:#fbeaea;color:#5a1a1a;border-left:3px solid var(--bad)}
+.bres.aprx{background:#fef6e0;color:#5a3a00;border-left:3px solid var(--aprx)}
+.tip{margin-top:.42rem;padding:.48rem .68rem;background:rgba(200,148,26,.08);border-radius:3px;font-style:italic;font-size:.79rem;color:var(--ink2)}
+.tip-lbl{font-weight:600;font-style:normal;color:var(--gold)}
+.chkbadge{display:none;position:absolute;top:.9rem;right:.9rem;font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--gold)}
+.chkbadge.show{display:block}
+.hmeta{font-size:.74rem;color:#9a8c78;font-style:italic;margin-bottom:.88rem}
+
+@media(max-width:600px){
+  main{padding:1.4rem .9rem}.card{padding:1.4rem 1rem}
+  .tab{padding:.6rem .8rem;font-size:.8rem}
+  .fc-grid{grid-template-columns:1fr}
+  header{padding:.95rem 1.1rem}header h1{font-size:1.2rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">S</div>
+  <div><h1>StudyAI</h1><div class="sub">Transforme tes cours en révisions intelligentes</div></div>
+  <div class="free-badge">✓ 100% Gratuit</div>
+</header>
+
+<main>
+  <div class="card">
+    <div class="stitle"><span class="snum">1</span>Importe ou colle ton cours</div>
+
+    <div class="drop" id="dropZone">
+      <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.jpg,.jpeg,.png,.webp,image/*" onchange="onFileSelect(event)">
+      <div class="drop-icon">⊕</div>
+      <div class="drop-title">Dépose un fichier ou une photo ici</div>
+      <div class="drop-sub">Texte et images extraits automatiquement par l'IA</div>
+      <div class="fmt-pills">
+        <span class="pill">.txt</span><span class="pill">.pdf</span><span class="pill">.docx</span>
+        <span class="pill img">.jpg</span><span class="pill img">.png</span><span class="pill img">.webp</span>
+      </div>
+    </div>
+
+    <div class="thumbs" id="thumbs">
+      <div class="add-btn">
+        <input type="file" id="addInput" accept="image/*" multiple onchange="onMoreImages(event)">
+        <span style="font-size:1.4rem;opacity:.4">⊕</span><span>Ajouter</span>
+      </div>
+    </div>
+
+    <div class="parsing" id="parsing">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span id="parsingMsg">Extraction en cours…</span>
+    </div>
+    <div class="fok" id="fok">
+      <span>✓</span>
+      <span class="fok-name" id="fokName"></span>
+      <button style="background:none;border:none;cursor:pointer;color:#4caf78;font-size:1rem;padding:0 4px" onclick="clearFile()">✕</button>
+    </div>
+    <div class="ferr" id="ferr"></div>
+
+    <div class="divider">ou colle directement du texte</div>
+
+    <textarea class="ta" id="ta" placeholder="Colle ici tes notes, un chapitre de cours, une définition…
+
+Exemple : « La mitose est un processus de division cellulaire permettant à une cellule mère de produire deux cellules filles génétiquement identiques. Elle se déroule en 4 phases : prophase, métaphase, anaphase et télophase. »"></textarea>
+    <div class="meta">
+      <span>Minimum 100 caractères recommandés</span>
+      <span id="ccount">0 car.</span>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="generateAll()">✦ Générer mes fiches de révision</button>
+    <div class="loader" id="loader">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span id="loaderMsg">Gemini analyse ton cours…</span>
+    </div>
+  </div>
+
+  <div class="card tabs-sec" id="tabsSec">
+    <div class="tabs-hd">
+      <button class="tab active" onclick="switchTab('fc')">◈ Flashcards <span class="tcnt" id="fcCnt">0</span></button>
+      <button class="tab" onclick="switchTab('qz')">◉ Quiz <span class="tcnt" id="qzCnt">0</span></button>
+      <button class="tab" onclick="switchTab('bl')">◎ Définitions à trou <span class="tcnt" id="blCnt">0</span></button>
+    </div>
+    <div class="panel active" id="panel-fc"></div>
+    <div class="panel" id="panel-qz"></div>
+    <div class="panel" id="panel-bl"></div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script>
+let fcData=[],qzData=[],blData=[];
+let curQ=0,score=0,answered=false;
+let imgTexts={},imgCnt=0;
+
+document.getElementById('ta').addEventListener('input',function(){
+  document.getElementById('ccount').textContent=this.value.length+' car.';
+});
+
+// ── DRAG & DROP ──
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('over');
+  const files=Array.from(e.dataTransfer.files);
+  if(!files.length)return;
+  const imgs=['jpg','jpeg','png','webp'];
+  if(files.every(f=>imgs.includes(f.name.split('.').pop().toLowerCase())))
+    files.forEach(f=>addImage(f));
+  else processFile(files[0]);
+});
+
+function onFileSelect(e){
+  const f=e.target.files[0];if(!f)return;
+  const ext=f.name.split('.').pop().toLowerCase();
+  if(['jpg','jpeg','png','webp'].includes(ext)){addImage(f);document.getElementById('fileInput').value='';}
+  else processFile(f);
+}
+function onMoreImages(e){Array.from(e.target.files).forEach(f=>addImage(f));document.getElementById('addInput').value='';}
+
+function clearFile(){
+  document.getElementById('fileInput').value='';
+  document.getElementById('fok').classList.remove('show');
+  document.getElementById('ferr').classList.remove('show');
+  document.getElementById('ta').value='';
+  document.getElementById('ccount').textContent='0 car.';
+  dz.style.display='';
+}
+function showErr(m){
+  const el=document.getElementById('ferr');el.textContent=m;el.classList.add('show');
+  document.getElementById('parsing').classList.remove('show');
+}
+
+// ── IMAGES (Puter vision) ──
+function addImage(file){
+  const id=++imgCnt,url=URL.createObjectURL(file);
+  const grid=document.getElementById('thumbs');
+  grid.classList.add('show');dz.style.display='none';
+  const t=document.createElement('div');t.className='thumb';t.id='th-'+id;
+  t.innerHTML=`<img src="${url}"><div class="thumb-ov"><button class="rm-img" onclick="rmImg(${id})">✕</button></div><div class="istatus loading" id="is-${id}">⟳ OCR…</div>`;
+  grid.insertBefore(t,grid.querySelector('.add-btn'));
+  extractImgText(file,id);
+}
+
+function rmImg(id){
+  const t=document.getElementById('th-'+id);if(t)t.remove();
+  delete imgTexts[id];rebuildText();
+  const g=document.getElementById('thumbs');
+  if(!g.querySelectorAll('.thumb').length){g.classList.remove('show');dz.style.display='';}
+}
+
+async function extractImgText(file,id){
+  try{
+    // Use Puter vision with the image file
+    const response = await puter.ai.chat(
+      'Transcris intégralement tout le texte visible sur cette image (cours, notes, tableau, schéma). Préserve la structure. Réponds UNIQUEMENT avec le texte transcrit, rien d\'autre.',
+      URL.createObjectURL(file),
+      {model:'google/gemini-2.5-flash'}
+    );
+    imgTexts[id] = (typeof response === 'string' ? response : response?.message?.content?.[0]?.text || response?.toString() || '').trim();
+    const s=document.getElementById('is-'+id);
+    if(s){s.className='istatus done';s.textContent='✓ Extrait';}
+    rebuildText();
+  }catch(e){
+    const s=document.getElementById('is-'+id);
+    if(s){s.className='istatus error';s.textContent='✗ Erreur';}
+  }
+}
+
+function rebuildText(){
+  const existing=document.getElementById('ta').value;
+  const marker='\n\n--- Texte des images ---\n';
+  const base=existing.split(marker)[0].trim();
+  const imgs=Object.values(imgTexts).join('\n\n---\n\n');
+  const val=imgs?(base?base+marker+imgs:imgs):base;
+  document.getElementById('ta').value=val;
+  document.getElementById('ccount').textContent=val.length+' car.';
+}
+
+// ── FILE PROCESSING ──
+async function processFile(file){
+  const name=file.name,ext=name.split('.').pop().toLowerCase();
+  if(!['txt','pdf','docx'].includes(ext)){showErr('Format non supporté : .txt, .pdf ou .docx uniquement.');return;}
+  document.getElementById('ferr').classList.remove('show');
+  document.getElementById('fok').classList.remove('show');
+  document.getElementById('parsing').classList.add('show');
+  document.getElementById('parsingMsg').textContent=ext==='pdf'?'Extraction du PDF…':ext==='docx'?'Lecture du Word…':'Lecture du texte…';
+  dz.style.display='none';
+  try{
+    let text='';
+    if(ext==='txt'){
+      text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsText(file,'UTF-8');});
+    }else if(ext==='pdf'){
+      const lib=window['pdfjs-dist/build/pdf'];
+      lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await lib.getDocument({data:await file.arrayBuffer()}).promise;
+      for(let i=1;i<=pdf.numPages;i++){
+        const p=await pdf.getPage(i);const c=await p.getTextContent();
+        text+=c.items.map(x=>x.str).join(' ')+'\n';
+      }
+    }else if(ext==='docx'){
+      const r=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});text=r.value;
+    }
+    text=text.trim();
+    if(text.length<20){dz.style.display='';throw new Error('Fichier vide ou texte non extractible.');}
+    document.getElementById('ta').value=text;
+    document.getElementById('ccount').textContent=text.length+' car.';
+    document.getElementById('parsing').classList.remove('show');
+    document.getElementById('fokName').textContent=name+' — '+text.length+' car.';
+    document.getElementById('fok').classList.add('show');
+  }catch(e){dz.style.display='';showErr(e.message||'Erreur de lecture.');}
+}
+
+// ── PUTER AI HELPER ──
+async function askAI(prompt){
+  const response = await puter.ai.chat(prompt, {model:'google/gemini-2.5-flash'});
+  if(typeof response === 'string') return response;
+  return response?.message?.content?.[0]?.text
+    || response?.text
+    || response?.toString()
+    || '';
+}
+
+// ── TABS ──
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['fc','qz','bl'][i]===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+}
+
+// ── GENERATE ──
+async function generateAll(){
+  const text=document.getElementById('ta').value.trim();
+  if(text.length<50){alert('Ajoute plus de texte pour générer des exercices !');return;}
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true;
+  document.getElementById('loader').classList.add('show');
+  document.getElementById('tabsSec').classList.remove('show');
+  try{
+    document.getElementById('loaderMsg').textContent='Gemini génère tes exercices…';
+    const prompt=`Tu es un assistant pédagogique expert. Génère des exercices de révision variés et pertinents à partir de ce cours.
+
+COURS :
+${text.slice(0,5000)}
+
+Réponds UNIQUEMENT avec du JSON valide, sans backticks ni commentaires, directement :
+{"flashcards":[{"question":"question courte","answer":"réponse concise"}],"quiz":[{"question":"question","options":["A: option1","B: option2","C: option3","D: option4"],"correct":0,"explanation":"explication"}],"blanks":[{"sentence":"Phrase avec ___ à compléter.","answer":"mot","hint":"indice"}]}
+
+Règles STRICTES :
+- 7 flashcards (questions variées, réponses claires)
+- 6 QCM (4 options, correct = index 0 à 3, explication obligatoire)
+- 6 définitions à trou (UNE seule lacune ___ par phrase)
+- Tout en français
+- JSON pur uniquement`;
+
+    const raw = await askAI(prompt);
+    const clean = raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    // Find JSON object
+    const start=clean.indexOf('{'), end=clean.lastIndexOf('}');
+    const parsed=JSON.parse(clean.slice(start,end+1));
+    fcData=parsed.flashcards||[];qzData=parsed.quiz||[];blData=parsed.blanks||[];
+    renderFC();renderQZ();renderBL();
+    document.getElementById('fcCnt').textContent=fcData.length;
+    document.getElementById('qzCnt').textContent=qzData.length;
+    document.getElementById('blCnt').textContent=blData.length;
+    document.getElementById('tabsSec').classList.add('show');
+    document.getElementById('tabsSec').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    console.error(e);
+    alert('Erreur : '+(e.message||'Problème inconnu. Réessaie !'));
+  }finally{
+    btn.disabled=false;
+    document.getElementById('loader').classList.remove('show');
+  }
+}
+
+// ── FLASHCARDS ──
+function renderFC(){
+  const c=document.getElementById('panel-fc');
+  c.innerHTML=`<p class="hmeta">Clique sur une carte pour révéler la réponse ↺</p>
+  <div class="fc-grid">${fcData.map((fc,i)=>`
+    <div class="fc-wrap" onclick="this.classList.toggle('flip')">
+      <div class="fc-inner">
+        <div class="fc-face fc-front">
+          <div class="fc-lbl">Question ${i+1}</div>
+          <div class="fc-txt">${esc(fc.question)}</div>
+          <div class="fc-hint">→ cliquer pour la réponse</div>
+        </div>
+        <div class="fc-face fc-back">
+          <div class="fc-lbl">Réponse</div>
+          <div class="fc-txt">${esc(fc.answer)}</div>
+        </div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+// ── QUIZ ──
+function renderQZ(){curQ=0;score=0;answered=false;showQ();}
+function showQ(){
+  const c=document.getElementById('panel-qz');
+  if(curQ>=qzData.length){
+    const pct=Math.round((score/qzData.length)*100);
+    const msg=pct>=80?'Excellent ! 🎉':pct>=60?'Bon résultat !':'Continue les révisions !';
+    c.innerHTML=`<div class="res show"><div class="res-score">${pct}%</div><div class="res-lbl">${score}/${qzData.length} bonnes réponses — ${msg}</div><button class="retry" onclick="renderQZ()">↺ Recommencer</button></div>`;
+    return;
+  }
+  const q=qzData[curQ],p=Math.round((curQ/qzData.length)*100),L=['A','B','C','D'];
+  c.innerHTML=`<div class="qprog"><div class="pbar"><div class="pfill" style="width:${p}%"></div></div><div class="plbl">${curQ+1}/${qzData.length}</div><div class="sbadge">Score : ${score}</div></div>
+  <div class="qcard">
+    <div class="qnum">Question ${curQ+1}</div>
+    <div class="qtxt">${esc(q.question)}</div>
+    <div class="opts">${q.options.map((o,i)=>`<button class="opt" onclick="ansQ(${i})"><span class="olet">${L[i]}</span>${esc(o)}</button>`).join('')}</div>
+    <div class="qfb" id="qfb"></div>
+    <button class="nxt" id="nxt" onclick="nextQ()">${curQ<qzData.length-1?'Question suivante →':'Voir les résultats →'}</button>
+  </div>`;
+}
+function ansQ(idx){
+  if(answered)return;answered=true;
+  const q=qzData[curQ],opts=document.querySelectorAll('.opt');
+  opts.forEach(o=>o.disabled=true);
+  if(idx===q.correct){opts[idx].classList.add('correct');score++;}
+  else{opts[idx].classList.add('wrong');opts[q.correct].classList.add('correct');}
+  const fb=document.getElementById('qfb');
+  if(q.explanation){fb.textContent=q.explanation;fb.classList.add('show');}
+  document.getElementById('nxt').classList.add('show');
+}
+function nextQ(){answered=false;curQ++;showQ();}
+
+// ── BLANKS ──
+function renderBL(){
+  const c=document.getElementById('panel-bl');
+  c.innerHTML=`<p class="hmeta">Complète chaque phrase puis clique sur "Vérifier". L'IA détecte les réponses approximatives.</p>
+  ${blData.map((b,i)=>`
+    <div class="blank-item" id="bi-${i}">
+      <div class="chkbadge" id="cb-${i}">⟳ IA vérifie…</div>
+      <div class="bsentence">${fmtS(b.sentence)}</div>
+      <div class="brow">
+        <input class="binput" id="inp-${i}" type="text"
+          placeholder="${b.hint?'Indice : '+esc(b.hint):'Ta réponse…'}"
+          onkeydown="if(event.key==='Enter')checkB(${i})"/>
+        <button class="chkbtn" id="bc-${i}" onclick="checkB(${i})">Vérifier</button>
+      </div>
+      <div class="bres" id="br-${i}"></div>
+    </div>`).join('')}`;
+}
+function fmtS(s){return esc(s).replace('___','<strong style="color:var(--gold);font-size:1.2em;letter-spacing:.04em">___</strong>');}
+
+async function checkB(i){
+  const b=blData[i],inp=document.getElementById('inp-'+i),res=document.getElementById('br-'+i);
+  const btn=document.getElementById('bc-'+i),cb=document.getElementById('cb-'+i);
+  const ans=inp.value.trim();if(!ans){inp.focus();return;}
+  btn.disabled=true;inp.disabled=true;cb.classList.add('show');
+  document.getElementById('bi-'+i).classList.add('chk');
+  try{
+    // Exact match shortcut
+    if(ans.toLowerCase()===b.answer.toLowerCase()){
+      inp.classList.add('ok');res.className='bres show ok';
+      res.innerHTML=`<strong>✓ Parfait !</strong> La réponse est bien <strong>${esc(b.answer)}</strong>.`;
+      return;
+    }
+    // Ask Gemini to evaluate
+    const raw=await askAI(`Évalue si la réponse d'un étudiant est correcte, approximative ou fausse.
+Phrase : "${b.sentence}"
+Réponse attendue : "${b.answer}"
+Réponse de l'étudiant : "${ans}"
+Réponds UNIQUEMENT en JSON valide : {"status":"correct","feedback":"explication 1-2 phrases","tip":"astuce mémorisation 1 phrase"}
+Le champ status doit être exactement "correct", "approx" ou "wrong".`);
+
+    const clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const s=clean.indexOf('{'),e2=clean.lastIndexOf('}');
+    const ev=JSON.parse(clean.slice(s,e2+1));
+
+    if(ev.status==='correct'){
+      inp.classList.add('ok');res.className='bres show ok';
+      res.innerHTML=`<strong>✓ Correct !</strong> ${esc(ev.feedback)}<div class="tip"><span class="tip-lbl">✦ Astuce IA : </span>${esc(ev.tip)}</div>`;
+    }else if(ev.status==='approx'){
+      inp.classList.add('aprx');res.className='bres show aprx';
+      res.innerHTML=`<strong>≈ Approximatif</strong> — ${esc(ev.feedback)}<br><small style="display:block;margin-top:.3rem">Réponse exacte : <strong>${esc(b.answer)}</strong></small><div class="tip"><span class="tip-lbl">✦ Astuce IA : </span>${esc(ev.tip)}</div>`;
+    }else{
+      inp.classList.add('bad');res.className='bres show bad';
+      res.innerHTML=`<strong>✗ Incorrect</strong> — ${esc(ev.feedback)}<br><small style="display:block;margin-top:.3rem">Réponse attendue : <strong>${esc(b.answer)}</strong></small><div class="tip"><span class="tip-lbl">✦ Astuce IA : </span>${esc(ev.tip)}</div>`;
+    }
+  }catch(e){
+    // Fallback : Levenshtein similarity
+    const sim=strSim(ans,b.answer);
+    if(sim>.6){
+      inp.classList.add('aprx');res.className='bres show aprx';
+      res.innerHTML=`<strong>≈ Presque !</strong> Réponse exacte : <strong>${esc(b.answer)}</strong><div class="tip"><span class="tip-lbl">✦ Astuce : </span>Souviens-toi bien de l'orthographe exacte.</div>`;
+    }else{
+      inp.classList.add('bad');res.className='bres show bad';
+      res.innerHTML=`<strong>✗ Incorrect.</strong> Réponse attendue : <strong>${esc(b.answer)}</strong><div class="tip"><span class="tip-lbl">✦ Astuce : </span>Relis cette partie du cours et reformule avec tes mots.</div>`;
+    }
+  }finally{
+    cb.classList.remove('show');
+    document.getElementById('bi-'+i).classList.remove('chk');
+    res.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function strSim(a,b){
+  a=a.toLowerCase().trim();b=b.toLowerCase().trim();if(a===b)return 1;
+  const l=a.length>b.length?a:b,s=a.length>b.length?b:a;
+  const dp=Array.from({length:l.length+1},(_,i)=>Array.from({length:s.length+1},(_,j)=>i?j?0:i:j));
+  for(let i=1;i<=l.length;i++)for(let j=1;j<=s.length;j++)dp[i][j]=l[i-1]===s[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return(l.length-dp[l.length][s.length])/l.length;
+}
+</script>
+</body>
+</html>
